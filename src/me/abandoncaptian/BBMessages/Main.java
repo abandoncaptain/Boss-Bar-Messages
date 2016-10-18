@@ -55,23 +55,36 @@ public class Main extends JavaPlugin implements Listener{
 				return true;
 			}
 			if(args.length > 0){
+				//BossBar reload
 				if(args[0].equalsIgnoreCase("Reload") && args.length == 1){
 					setConfigDefaults();
 				}
-				if(args[0].equalsIgnoreCase("Send") && args.length >= 2){
+				if(args[0].equalsIgnoreCase("Reload") && args.length > 1){
+					p.sendMessage("§cIncorrect Arguments!");
+					p.sendMessage("§7/bossbar reload");
+				}
+				//BossBar Send
+				if(args[0].equalsIgnoreCase("Send") && args.length >= 3){
 					StringBuilder str = new StringBuilder();
-					for(int i = 1; i < args.length; i++){
+					for(int i = 2; i < args.length; i++){
 						str.append(args[i] + " ");
 					}
 					String mess = str.toString();
 					mess = mess.replace("&", "§");
-					sendBossBar(mess);
+					int duration = Integer.parseInt(args[1]);
+					sendBossBar(mess, duration);
 					return true;
-				} else if(args[0].equalsIgnoreCase("Send")){
+				}else if(args[0].equalsIgnoreCase("Send") && args.length == 2){
 					p.sendMessage("§cIncorrect Arguments!");
-					p.sendMessage("§7/bossbar Send <Message to send>");
+					p.sendMessage("§7/bossbar Send <Duration(in seconds)> <Message to send>");
+					return true;
+				}  else if(args[0].equalsIgnoreCase("Send")){
+					p.sendMessage("§cIncorrect Arguments!");
+					p.sendMessage("§7/bossbar Send <Duration(in seconds)> <Message to send>");
 					return true;
 				}
+				
+				//BossBar Set
 				if(args[0].equalsIgnoreCase("Set") && args.length >= 3){
 					StringBuilder str = new StringBuilder();
 					for(int i = 3; i < args.length; i++){
@@ -101,6 +114,7 @@ public class Main extends JavaPlugin implements Listener{
 				}
 				return true;
 			} else {
+				//Default
 				p.sendMessage("§cInvalid Arguments!");
 				p.sendMessage("§7/bossbar [Send/Set/Reload]");
 				return true;
@@ -134,25 +148,25 @@ public class Main extends JavaPlugin implements Listener{
 				}
 				mess = Config.getString("Messages." + sIndex);
 				mess.replace("&", "§");
-				sendBossBar(mess);
+				sendBossBar(mess, 10);
 			}
 		};
 	}
 	
-	public void sendBossBar(String mess) {
+	public void sendBossBar(String mess, int duration) {
 		final BossBar bar = Bukkit.createBossBar(mess, BarColor.GREEN, BarStyle.SOLID, new BarFlag[0]);
 		for(Player p: Bukkit.getOnlinePlayers()){
 			bar.addPlayer(p);
 		}
-		clearBossBar(bar);
+		clearBossBar(bar, duration);
 	}
-	public void clearBossBar(final BossBar bar) {
+	public void clearBossBar(final BossBar bar, int duration) {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
 				bar.removeAll();
 				bar.setVisible(false);
 			}
-		}.runTaskTimer(plugin, (20*10), 0);
+		}.runTaskTimer(plugin, (20*duration), 0);
 	}
 }
