@@ -1,0 +1,6 @@
+name: BossBarMessages
+version: 1.0
+main: me.abandoncaptian.BBMessages.Main
+description: Boss Bar Messaging plugin made by abandoncaptian
+commands:
+  bb:
