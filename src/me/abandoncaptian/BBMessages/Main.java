@@ -21,6 +21,7 @@ public class Main extends JavaPlugin implements Listener{
 	Logger myPluginLogger = Bukkit.getLogger();
 	MyConfigManager manager;
 	MyConfig Config;
+	int index = 1;
 	public static boolean works = true;
 
 	@Override
@@ -32,18 +33,8 @@ public class Main extends JavaPlugin implements Listener{
 		myPluginLogger.info("--------------------------------");
 		manager = new MyConfigManager(this);
 		Config = manager.getNewConfig("Config.yml", new String[] {"Boss Bar Config Settings"});
-		Bukkit.getScheduler().runTaskTimer(this, sched(), (20*10), 1200);
-		if(!Config.contains("Messages")){
-			Config.set("Messages.1", "&bTest Message #1");
-			Config.set("Messages.2", "&bTest Message #2");
-			Config.set("Messages.3", "&bEdit these at any time!");
-			Config.set("Messages.4", "&bYou can have as many as you wish!");
-		}
-		if(!Config.contains("Interval")){
-			Config.set("Interval", 1);
-		}
-		Config.saveConfig();
-		Config.reloadConfig();
+		Bukkit.getScheduler().runTaskTimer(this, sched(), 0, 1200*Config.getInt("Interval"));
+		setConfigDefaults();
 	}
 
 	@Override
@@ -57,7 +48,7 @@ public class Main extends JavaPlugin implements Listener{
 	@Override
 	public boolean onCommand(CommandSender theSender, Command cmd, String commandLabel,String[] args)
 	{
-		if(commandLabel.equalsIgnoreCase("bb") && (theSender instanceof Player)){
+		if(commandLabel.equalsIgnoreCase("bossbar") && (theSender instanceof Player)){
 			Player p = (Player) theSender;
 			if(!p.hasPermission("bbmessages.all")){
 				p.sendMessage("§cYou don't have permission to perform this command!");
@@ -65,18 +56,7 @@ public class Main extends JavaPlugin implements Listener{
 			}
 			if(args.length > 0){
 				if(args[0].equalsIgnoreCase("Reload") && args.length == 1){
-					if(!Config.contains("Messages")){
-						Config.set("Messages.1", "&bTest Message #1");
-						Config.set("Messages.2", "&bTest Message #2");
-						Config.set("Messages.3", "&bEdit these at any time!");
-						Config.set("Messages.4", "&bYou can have as many as you wish!");
-					}
-					if(!Config.contains("Interval")){
-						Config.set("Interval", 1);
-					}
-					Config.saveConfig();
-					Config.reloadConfig();
-					return true;
+					setConfigDefaults();
 				}
 				if(args[0].equalsIgnoreCase("Send") && args.length >= 2){
 					StringBuilder str = new StringBuilder();
@@ -89,7 +69,7 @@ public class Main extends JavaPlugin implements Listener{
 					return true;
 				} else if(args[0].equalsIgnoreCase("Send")){
 					p.sendMessage("§cIncorrect Arguments!");
-					p.sendMessage("§7/bb Send <Message to send>");
+					p.sendMessage("§7/bossbar Send <Message to send>");
 					return true;
 				}
 				if(args[0].equalsIgnoreCase("Set") && args.length >= 3){
@@ -112,48 +92,61 @@ public class Main extends JavaPlugin implements Listener{
 
 				} else if(args[0].equalsIgnoreCase("Set") && args.length == 2){
 					p.sendMessage("§cIncorrect Arguments!");
-					p.sendMessage("§7/bb Set <Message #> <Message to send>");
+					p.sendMessage("§7/bossbar Set <Message #> <Message to send>");
 					return true;
 				} else if(args[0].equalsIgnoreCase("Set") && args.length == 1){
 					p.sendMessage("§cIncorrect Arguments!");
-					p.sendMessage("§7/bb Set <Message #> <Message to send>");
+					p.sendMessage("§7/bossbar Set <Message #> <Message to send>");
 					return true;
 				}
 				return true;
 			} else {
 				p.sendMessage("§cInvalid Arguments!");
-				p.sendMessage("§7/bb [Send/Set/Reload]");
+				p.sendMessage("§7/bossbar [Send/Set/Reload]");
 				return true;
 			}
 
 		}
 		return  true;
 	}
+	public void setConfigDefaults(){
+		if(!Config.contains("Messages")){
+			Config.set("Messages.1", "&bTest Message #1");
+			Config.set("Messages.2", "&bTest Message #2");
+			Config.set("Messages.3", "&bEdit these at any time!");
+			Config.set("Messages.4", "&bYou can have as many as you wish!");
+		}
+		if(!Config.contains("Interval")){
+			Config.set("Interval", 1);
+		}
+		Config.saveConfig();
+		Config.reloadConfig();
+		return;
+	}
 	public Runnable sched(){
 		return new BukkitRunnable() {
-
 			@Override
 			public void run() {
 				String mess;
-				int index = 1;
 				String sIndex = String.valueOf(index);
 				if (!Config.contains("Messages." + sIndex)){
 					index = 1;
 				}
 				mess = Config.getString("Messages." + sIndex);
+				mess.replace("&", "§");
 				sendBossBar(mess);
 			}
 		};
 	}
 	
 	public void sendBossBar(String mess) {
-		BossBar bar = Bukkit.createBossBar(mess, BarColor.GREEN, BarStyle.SOLID, new BarFlag[0]);
+		final BossBar bar = Bukkit.createBossBar(mess, BarColor.GREEN, BarStyle.SOLID, new BarFlag[0]);
 		for(Player p: Bukkit.getOnlinePlayers()){
 			bar.addPlayer(p);
 		}
 		clearBossBar(bar);
 	}
-	public void clearBossBar(BossBar bar) {
+	public void clearBossBar(final BossBar bar) {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
