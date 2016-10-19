@@ -23,6 +23,7 @@ public class Main extends JavaPlugin implements Listener{
 	MyConfig Config;
 	int index = 1;
 	public static boolean works = true;
+	BossBar bar;
 
 	@Override
 	public void onEnable()
@@ -34,7 +35,8 @@ public class Main extends JavaPlugin implements Listener{
 		manager = new MyConfigManager(this);
 		Config = manager.getNewConfig("Config.yml", new String[] {"Boss Bar Config Settings"});
 		int Interval = (int) Config.getInt("Interval");
-		Bukkit.getScheduler().runTaskTimer(this, sched(), 0, (1200*Interval));
+		Interval = Interval * 1200;
+		Bukkit.getScheduler().runTaskTimer(this, sched(), 0, Interval);
 		setConfigDefaults();
 		Config.reloadConfig();
 	}
@@ -59,6 +61,7 @@ public class Main extends JavaPlugin implements Listener{
 			if(args.length > 0){
 				//BossBar reload
 				if(args[0].equalsIgnoreCase("Reload") && args.length == 1){
+					bossBarReloadClear(bar);
 					setConfigDefaults();
 					Config.reloadConfig();
 					p.sendMessage("§bConfig Reloaded");
@@ -87,15 +90,16 @@ public class Main extends JavaPlugin implements Listener{
 					p.sendMessage("§7/bossbar Send <Duration(in seconds)> <Message to send>");
 					return true;
 				}
-				
+
 				//BossBar Set
 				if(args[0].equalsIgnoreCase("Set") && args.length >= 3){
 					StringBuilder str = new StringBuilder();
-					for(int i = 3; i < args.length; i++){
+					for(int i = 2; i < args.length; i++){
 						str.append(args[i] + " ");
 					}
 					String mess = str.toString();
 					String pathNum = (String) args[1].toString();
+					p.sendMessage("Message Index " + pathNum + " has been set to " + mess);
 					if(Config.contains("Message."+pathNum)){
 						Config.set("Messages."+pathNum , mess);
 						Config.saveConfig();
@@ -138,10 +142,14 @@ public class Main extends JavaPlugin implements Listener{
 		if(!(Config.contains("Interval"))){
 			Config.set("Interval", 1);
 		}
+		if(!(Config.contains("Bar"))){
+			Config.set("Bar.Color", "GREEN");
+			Config.set("Bar.Style", "SOLID");
+		}
 		Config.saveConfig();
 		return;
 	}
-	
+
 	public Runnable sched(){
 		return new BukkitRunnable() {
 			@Override
@@ -152,27 +160,43 @@ public class Main extends JavaPlugin implements Listener{
 					index = 1;
 				}
 				mess = Config.getString("Messages." + sIndex);
-				mess = mess.replace("&", "§");
+				if(mess.contains("&"))mess = mess.replace("&", "§");
 				sendBossBar(mess, 10);
 				index = index + 1;
 			}
 		};
 	}
+
+	boolean active = false;
 	
 	public void sendBossBar(String mess, int duration) {
-		final BossBar bar = Bukkit.createBossBar(mess, BarColor.GREEN, BarStyle.SOLID, new BarFlag[0]);
+		if(active){
+			return;
+		}
+		BarColor bC = BarColor.valueOf(Config.getString("Bar.Color"));
+		BarStyle bS = BarStyle.valueOf(Config.getString("Bar.Style"));
+		bar = Bukkit.createBossBar(mess, bC, bS, new BarFlag[0]);
+		active = true;
 		for(Player p: Bukkit.getOnlinePlayers()){
 			bar.addPlayer(p);
 		}
-		clearBossBar(bar, duration);
+		duration = duration * 20;
+		active = clearBossBar(bar, duration);
 	}
-	public void clearBossBar(final BossBar bar, int duration) {
+	public Boolean clearBossBar(final BossBar bar, int duration) {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
 				bar.removeAll();
 				bar.setVisible(false);
+				active = false;
 			}
-		}.runTaskTimer(plugin, (20*duration), 0);
+		}.runTaskTimer(plugin, duration, 0);
+		return active;
+	}
+	
+	public void bossBarReloadClear(final BossBar bar) {
+		bar.removeAll();
+		bar.setVisible(false);
 	}
 }
