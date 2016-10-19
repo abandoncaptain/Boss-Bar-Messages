@@ -33,8 +33,10 @@ public class Main extends JavaPlugin implements Listener{
 		myPluginLogger.info("--------------------------------");
 		manager = new MyConfigManager(this);
 		Config = manager.getNewConfig("Config.yml", new String[] {"Boss Bar Config Settings"});
-		Bukkit.getScheduler().runTaskTimer(this, sched(), 0, 1200*Config.getInt("Interval"));
+		int Interval = (int) Config.getInt("Interval");
+		Bukkit.getScheduler().runTaskTimer(this, sched(), 0, (1200*Interval));
 		setConfigDefaults();
+		Config.reloadConfig();
 	}
 
 	@Override
@@ -48,7 +50,7 @@ public class Main extends JavaPlugin implements Listener{
 	@Override
 	public boolean onCommand(CommandSender theSender, Command cmd, String commandLabel,String[] args)
 	{
-		if(commandLabel.equalsIgnoreCase("bossbar") && (theSender instanceof Player)){
+		if((commandLabel.equalsIgnoreCase("bossbar") || commandLabel.equalsIgnoreCase("bb")) && (theSender instanceof Player)){
 			Player p = (Player) theSender;
 			if(!p.hasPermission("bbmessages.all")){
 				p.sendMessage("§cYou don't have permission to perform this command!");
@@ -58,6 +60,8 @@ public class Main extends JavaPlugin implements Listener{
 				//BossBar reload
 				if(args[0].equalsIgnoreCase("Reload") && args.length == 1){
 					setConfigDefaults();
+					Config.reloadConfig();
+					p.sendMessage("§bConfig Reloaded");
 				}
 				if(args[0].equalsIgnoreCase("Reload") && args.length > 1){
 					p.sendMessage("§cIncorrect Arguments!");
@@ -91,13 +95,14 @@ public class Main extends JavaPlugin implements Listener{
 						str.append(args[i] + " ");
 					}
 					String mess = str.toString();
-					if(Config.contains("Message."+args[1].toString())){
-						Config.set("Messages."+args[1].toString() , mess);
+					String pathNum = (String) args[1].toString();
+					if(Config.contains("Message."+pathNum)){
+						Config.set("Messages."+pathNum , mess);
 						Config.saveConfig();
 						Config.reloadConfig();
 						return true;
 					}else{
-						Config.set("Messages."+args[1], mess);
+						Config.set("Messages."+pathNum, mess);
 						Config.saveConfig();
 						Config.reloadConfig();
 						return true;
@@ -124,19 +129,19 @@ public class Main extends JavaPlugin implements Listener{
 		return  true;
 	}
 	public void setConfigDefaults(){
-		if(!Config.contains("Messages")){
+		if(!(Config.contains("Messages"))){
 			Config.set("Messages.1", "&bTest Message #1");
 			Config.set("Messages.2", "&bTest Message #2");
 			Config.set("Messages.3", "&bEdit these at any time!");
 			Config.set("Messages.4", "&bYou can have as many as you wish!");
 		}
-		if(!Config.contains("Interval")){
+		if(!(Config.contains("Interval"))){
 			Config.set("Interval", 1);
 		}
 		Config.saveConfig();
-		Config.reloadConfig();
 		return;
 	}
+	
 	public Runnable sched(){
 		return new BukkitRunnable() {
 			@Override
@@ -147,8 +152,9 @@ public class Main extends JavaPlugin implements Listener{
 					index = 1;
 				}
 				mess = Config.getString("Messages." + sIndex);
-				mess.replace("&", "§");
+				mess = mess.replace("&", "§");
 				sendBossBar(mess, 10);
+				index = index + 1;
 			}
 		};
 	}
